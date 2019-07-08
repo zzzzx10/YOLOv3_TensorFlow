@@ -43,26 +43,23 @@ pred_boxes, pred_confs, pred_probs = yolo_model.predict(pred_feature_maps)
 pred_scores = pred_confs * pred_probs
 saver = tf.train.Saver()
 
-for y in range(5):
-    time1 = timer()
-    input_image = str(y)+".jpg"
-    img_ori = cv2.imread(input_image)
-    height_ori, width_ori = img_ori.shape[:2]
-    img = cv2.resize(img_ori, tuple(args.new_size))
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-    img = np.asarray(img, np.float32)
-    img = img[np.newaxis, :] / 255.
-
-    with tf.Session() as sess:
-        saver.restore(sess, args.restore_path)
+#如果用cpu 注释下一句
+#boxes, scores, labels = gpu_nms(pred_boxes, pred_scores, args.num_class, max_boxes=200, score_thresh=0.3, nms_thresh=0.45)
 
 
-        #如果用cpu 注释下一句
-        #boxes, scores, labels = gpu_nms(pred_boxes, pred_scores, args.num_class, max_boxes=200, score_thresh=0.3, nms_thresh=0.45)
+with tf.Session() as sess:
+    saver.restore(sess, args.restore_path)
 
 
-
-
+    for y in range(5):
+        time1 = timer()
+        input_image = str(y)+".jpg"
+        img_ori = cv2.imread(input_image)
+        height_ori, width_ori = img_ori.shape[:2]
+        img = cv2.resize(img_ori, tuple(args.new_size))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = np.asarray(img, np.float32)
+        img = img[np.newaxis, :] / 255.
 
         # CPU
         boxes, scores = sess.run([pred_boxes, pred_scores], feed_dict={input_data: img})
@@ -82,7 +79,6 @@ for y in range(5):
         print('*' * 30)
         print("labels:")
         print(labels_)
-
 
         for i in range(len(boxes_)):
             x0, y0, x1, y1 = boxes_[i]
