@@ -86,14 +86,14 @@ class yolov3(object):
         anchors: shape: [3, 2]
         '''
         # NOTE: size in [h, w] format! don't get messed up!
-        grid_size = feature_map.get_shape().as_list()[1:3] if self.use_static_shape else tf.shape(feature_map)[1:3]  # [13, 13]
+        grid_size = feature_map.get_shape().as_list()[1:3] if self.use_static_shape else feature_map[1:3]  # [13, 13]
         # the downscale ratio in height and weight
-        ratio = tf.cast(self.img_size / grid_size, tf.float32)
+        ratio = self.img_size / grid_size
         # rescale the anchors to the feature_map
         # NOTE: the anchor is in [w, h] format!
         rescaled_anchors = [(anchor[0] / ratio[1], anchor[1] / ratio[0]) for anchor in anchors]
 
-        feature_map = tf.reshape(feature_map, [-1, grid_size[0], grid_size[1], 3, 5 + self.class_num])
+        feature_map = (feature_map.reshape([-1, grid_size[0], grid_size[1], 3, 5 + self.class_num]))
 
         # split the feature_map along the last dimension
         # shape info: take 416x416 input image and the 13*13 feature_map for example:
@@ -101,7 +101,7 @@ class yolov3(object):
         # box_sizes: [N, 13, 13, 3, 2] last_dimension: [width, height]
         # conf_logits: [N, 13, 13, 3, 1]
         # prob_logits: [N, 13, 13, 3, class_num]
-        box_centers, box_sizes, conf_logits, prob_logits = tf.split(feature_map, [2, 2, 1, self.class_num], axis=-1)
+        box_centers, box_sizes, conf_logits, prob_logits = feature_map.split( [2, 2, 1, self.class_num], axis=-1)
         box_centers = tf.nn.sigmoid(box_centers)
 
         # use some broadcast tricks to get the mesh coordinates
@@ -231,13 +231,13 @@ class yolov3(object):
         # shape: [N, (13*13+26*26+52*52)*3, class_num]
         probs = tf.concat(probs_list, axis=1)
 
-        center_x, center_y, width, height = tf.split(boxes, [1, 1, 1, 1], axis=-1)
+        center_x, center_y, width, height = boxes[1, 1, 1, 1]
         x_min = center_x - width / 2
         y_min = center_y - height / 2
         x_max = center_x + width / 2
         y_max = center_y + height / 2
 
-        boxes = tf.concat([x_min, y_min, x_max, y_max], axis=-1)
+        boxes = [x_min, y_min, x_max, y_max]
 
         return boxes, confs, probs
     
